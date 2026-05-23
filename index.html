@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kerajaan Angka Nusantara 👑🔢</title>
+    
+    <!-- Google Fonts: Fredoka -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Fredoka', 'sans-serif'],
+                    },
+                    colors: {
+                        fantasy: {
+                            dark: '#0f172a',
+                            purple: '#4c1d95',
+                            blue: '#1e3a8a',
+                            cyan: '#06b6d4',
+                            pink: '#db2777',
+                            gold: '#fbbf24'
+                        }
+                    },
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                        'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+                        'spin-slow': 'spin 8s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        'pulse-glow': {
+                            '0%, 100%': { opacity: 1, textShadow: '0 0 10px #06b6d4, 0 0 20px #06b6d4' },
+                            '50%': { opacity: .7, textShadow: '0 0 5px #06b6d4' },
+                        },
+                        shake: {
+                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #4c1d95 100%);
+            color: white;
+            overflow: hidden; /* Prevent body scroll */
+            touch-action: manipulation;
+        }
+
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .glass-btn {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.8), rgba(59, 130, 246, 0.8));
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
+            transition: all 0.2s ease;
+        }
+        
+        .glass-btn:active {
+            transform: scale(0.95);
+        }
+
+        .glass-btn-wrong {
+            background: linear-gradient(135deg, rgba(219, 39, 119, 0.8), rgba(153, 27, 84, 0.8));
+        }
+
+        .glass-btn-correct {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.8), rgba(5, 150, 105, 0.8));
+        }
+
+        /* Background Particles */
+        #particles {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle-num {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.15);
+            font-weight: bold;
+            animation: floatUp linear infinite;
+        }
+
+        @keyframes floatUp {
+            from { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            to { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        /* Screen Management */
+        .screen { display: none; }
+        .screen.active { display: flex; flex-direction: column; }
+        
+        .safe-pb { padding-bottom: max(2rem, env(safe-area-inset-bottom)); }
+        
+        .neon-text {
+            text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+        }
+
+        /* Avatar Selection */
+        input[type="radio"]:checked + div {
+            border-color: #fbbf24;
+            background: rgba(251, 191, 36, 0.2);
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+            transform: scale(1.1);
+        }
+
+        /* Progress Bar */
+        .timer-bar { transition: width 1s linear; }
+    </style>
+</head>
+<body class="h-screen w-full relative">
+
+    <!-- Background Particles Container -->
+    <div id="particles"></div>
+
+    <!-- AUDIO CONTEXT (Managed in JS) -->
+
+    <!-- ============================================== -->
+    <!-- 1. SPLASH SCREEN -->
+    <!-- ============================================== -->
+    <div id="screen-splash" class="screen active h-full w-full max-w-md mx-auto items-center justify-center p-6 relative z-10">
+        <div class="text-center animate-float">
+            <div class="text-6xl mb-4"><i class="fa-solid fa-crown text-fantasy-gold neon-text"></i></div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-2 leading-tight">Kerajaan<br><span class="text-fantasy-cyan animate-pulse-glow">Angka</span><br>Nusantara</h1>
+            <p class="text-lg text-gray-300 mt-4 mb-8">Selamatkan Kristal Numerik!</p>
+        </div>
+        
+        <button onclick="navTo('screen-avatar'); initAudio(); playSound('click')" class="glass-btn text-white font-bold py-4 px-10 rounded-full text-xl animate-bounce w-full max-w-xs">
+            Mulai Petualangan <i class="fa-solid fa-rocket ml-2"></i>
+        </button>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 2. AVATAR & PROFIL SCREEN -->
+    <!-- ============================================== -->
+    <div id="screen-avatar" class="screen h-full w-full max-w-md mx-auto p-6 relative z-10 overflow-y-auto safe-pb">
+        <div class="text-center mb-6 mt-8">
+            <h2 class="text-3xl font-bold text-fantasy-gold">Buat Karaktermu</h2>
+            <p class="text-sm mt-2 opacity-80">Jadilah Ksatria Angka Cilik!</p>
+        </div>
+
+        <div class="glass-panel p-6 rounded-3xl mb-6">
+            <label class="block mb-2 font-semibold">Siapa namamu?</label>
+            <input type="text" id="playerName" placeholder="Ketik nama di sini..." class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-fantasy-gold mb-6 text-center font-bold text-lg">
+
+            <label class="block mb-4 font-semibold text-center">Pilih Avatar:</label>
+            <div class="flex justify-center gap-6 mb-4">
+                <label class="cursor-pointer relative">
+                    <input type="radio" name="avatar" value="boy" class="hidden" checked>
+                    <div class="w-24 h-24 rounded-full border-4 border-transparent bg-white/10 flex items-center justify-center text-4xl transition-all duration-300">
+                        👦
+                    </div>
+                </label>
+                <label class="cursor-pointer relative">
+                    <input type="radio" name="avatar" value="girl" class="hidden">
+                    <div class="w-24 h-24 rounded-full border-4 border-transparent bg-white/10 flex items-center justify-center text-4xl transition-all duration-300">
+                        👧
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <button onclick="saveProfile()" class="glass-btn text-white font-bold py-4 px-8 rounded-full text-xl w-full mt-auto">
+            Masuk ke Kerajaan <i class="fa-solid fa-door-open ml-2"></i>
+        </button>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 3. MAP SCREEN (PETA DUNIA) -->
+    <!-- ============================================== -->
+    <div id="screen-map" class="screen h-full w-full max-w-lg mx-auto p-4 relative z-10 overflow-y-auto safe-pb flex flex-col">
+        <!-- Header Profil -->
+        <div class="flex justify-between items-center bg-black/30 p-3 rounded-2xl mb-6 backdrop-blur-md border border-white/10 mt-4">
+            <div class="flex items-center gap-3">
+                <div id="map-avatar" class="text-3xl bg-white/20 w-12 h-12 rounded-full flex items-center justify-center border border-fantasy-gold">👦</div>
+                <div>
+                    <div id="map-name" class="font-bold text-lg">Nama</div>
+                    <div class="text-xs text-fantasy-gold"><i class="fa-solid fa-star"></i> Skor: <span id="map-score">0</span></div>
+                </div>
+            </div>
+            <button onclick="resetData()" class="text-xs text-red-300 bg-red-900/50 px-3 py-1 rounded-full"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+        </div>
+
+        <h2 class="text-2xl font-bold text-center mb-8 drop-shadow-md">Peta Kerajaan Angka</h2>
+
+        <!-- Peta Nodes -->
+        <div class="relative flex-1 flex flex-col justify-center items-center gap-8 py-8">
+            <!-- Jalur (Visual only, CSS borders) -->
+            <div class="absolute w-1 bg-white/20 h-[70%] z-0 rounded-full"></div>
+
+            <!-- Level 4 -->
+            <button id="btn-lvl-4" onclick="prepareLevel(4)" class="lvl-btn relative z-10 w-full max-w-xs glass-panel rounded-2xl p-4 flex items-center gap-4 transition-transform opacity-50 grayscale" disabled>
+                <div class="w-16 h-16 rounded-full bg-indigo-900 border-4 border-gray-400 flex items-center justify-center text-2xl shadow-lg">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <div class="text-left">
+                    <div class="text-sm font-bold text-gray-300">Level 4</div>
+                    <div class="font-bold text-lg">Kota Pola & Bilangan Besar</div>
+                </div>
+            </button>
+
+            <!-- Level 3 -->
+            <button id="btn-lvl-3" onclick="prepareLevel(3)" class="lvl-btn relative z-10 w-full max-w-xs glass-panel rounded-2xl p-4 flex items-center gap-4 transition-transform opacity-50 grayscale" disabled>
+                <div class="w-16 h-16 rounded-full bg-pink-900 border-4 border-gray-400 flex items-center justify-center text-2xl shadow-lg">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <div class="text-left">
+                    <div class="text-sm font-bold text-gray-300">Level 3</div>
+                    <div class="font-bold text-lg">Pulau Pecahan Ceria</div>
+                </div>
+            </button>
+
+            <!-- Level 2 -->
+            <button id="btn-lvl-2" onclick="prepareLevel(2)" class="lvl-btn relative z-10 w-full max-w-xs glass-panel rounded-2xl p-4 flex items-center gap-4 transition-transform opacity-50 grayscale" disabled>
+                <div class="w-16 h-16 rounded-full bg-red-900 border-4 border-gray-400 flex items-center justify-center text-2xl shadow-lg">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <div class="text-left">
+                    <div class="text-sm font-bold text-gray-300">Level 2</div>
+                    <div class="font-bold text-lg">Kastil Operasi Hitung</div>
+                </div>
+            </button>
+
+            <!-- Level 1 -->
+            <button id="btn-lvl-1" onclick="prepareLevel(1)" class="lvl-btn relative z-10 w-full max-w-xs glass-panel rounded-2xl p-4 flex items-center gap-4 transition-transform transform hover:scale-105 active:scale-95 border-fantasy-cyan">
+                <div class="w-16 h-16 rounded-full bg-cyan-600 border-4 border-fantasy-cyan flex items-center justify-center text-3xl shadow-[0_0_15px_rgba(6,182,212,0.8)]">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+                <div class="text-left">
+                    <div class="text-sm font-bold text-fantasy-cyan">Level 1</div>
+                    <div class="font-bold text-lg">Desa Nilai Tempat</div>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 4. GAME SCREEN -->
+    <!-- ============================================== -->
+    <div id="screen-game" class="screen h-full w-full max-w-2xl mx-auto p-4 relative z-10 flex flex-col safe-pb">
+        <!-- Top HUD -->
+        <div class="flex justify-between items-center mb-4 mt-2 glass-panel p-3 rounded-2xl">
+            <div class="flex gap-1 text-red-500 text-xl" id="game-lives">
+                <i class="fa-solid fa-heart"></i>
+                <i class="fa-solid fa-heart"></i>
+                <i class="fa-solid fa-heart"></i>
+            </div>
+            <div class="text-center font-bold">
+                <div class="text-xs text-fantasy-cyan" id="game-level-name">Level 1</div>
+                <div>Soal <span id="game-q-num">1</span>/10</div>
+            </div>
+            <div class="font-bold text-fantasy-gold text-lg">
+                <i class="fa-solid fa-star"></i> <span id="game-score">0</span>
+            </div>
+        </div>
+
+        <!-- Timer Bar -->
+        <div class="w-full bg-white/20 h-4 rounded-full mb-4 overflow-hidden">
+            <div id="timer-bar" class="h-full bg-gradient-to-r from-green-400 to-fantasy-cyan w-full timer-bar"></div>
+        </div>
+
+        <!-- Mascot (Numi) Area -->
+        <div class="flex items-end gap-3 mb-4 animate-float">
+            <div class="w-14 h-14 bg-fantasy-cyan rounded-full flex items-center justify-center text-3xl shadow-[0_0_15px_rgba(6,182,212,0.8)] border-2 border-white">
+                ✨
+            </div>
+            <div class="glass-panel p-3 rounded-2xl rounded-bl-none text-sm font-medium border-l-4 border-l-fantasy-cyan">
+                <span class="font-bold text-fantasy-cyan">Numi:</span> <span id="numi-message">Ayo, kamu pasti bisa!</span>
+            </div>
+        </div>
+
+        <!-- Question Area -->
+        <div id="game-container" class="flex-1 flex flex-col">
+            <div class="glass-panel p-6 rounded-3xl mb-6 flex-1 flex flex-col justify-center items-center text-center min-h-[200px]">
+                <h3 id="question-text" class="text-2xl md:text-3xl font-bold leading-snug drop-shadow-md">Pertanyaan muncul di sini...</h3>
+            </div>
+
+            <!-- Options Grid -->
+            <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <!-- Options will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 5. RESULT SCREEN (After Level) -->
+    <!-- ============================================== -->
+    <div id="screen-result" class="screen h-full w-full max-w-md mx-auto p-6 relative z-10 flex flex-col items-center justify-center safe-pb">
+        <div class="glass-panel p-8 rounded-3xl text-center w-full relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 text-9xl opacity-10"><i class="fa-solid fa-star"></i></div>
+            
+            <h2 id="result-title" class="text-3xl font-bold mb-2">Level Selesai!</h2>
+            <div class="text-5xl my-6" id="result-icon">🌟</div>
+            
+            <div class="bg-black/30 rounded-xl p-4 mb-6">
+                <p class="text-sm text-gray-300">Skor Diperoleh</p>
+                <p class="text-4xl font-bold text-fantasy-gold" id="result-score">+100</p>
+            </div>
+
+            <p id="result-msg" class="mb-8 text-sm">Hebat! Kristal angka kembali bersinar berkat bantuanmu.</p>
+
+            <button onclick="navTo('screen-map'); playSound('click')" class="glass-btn text-white font-bold py-3 px-8 rounded-full text-lg w-full">
+                Kembali ke Peta <i class="fa-solid fa-map ml-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 6. CERTIFICATE SCREEN (Ending) -->
+    <!-- ============================================== -->
+    <div id="screen-certificate" class="screen h-full w-full max-w-lg mx-auto p-4 relative z-10 flex flex-col items-center justify-center safe-pb">
+        <div class="bg-white text-gray-800 p-8 rounded-sm shadow-[0_0_30px_rgba(251,191,36,0.6)] w-full text-center relative border-8 border-double border-amber-500 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]">
+            
+            <div class="text-amber-500 text-5xl mb-4"><i class="fa-solid fa-medal"></i></div>
+            
+            <h1 class="text-2xl font-bold text-amber-700 uppercase tracking-widest mb-2" style="font-family: serif;">Sertifikat Penghargaan</h1>
+            <p class="text-sm mb-6">Diberikan dengan bangga kepada:</p>
+            
+            <h2 id="cert-name" class="text-3xl font-bold text-blue-900 mb-2 border-b-2 border-amber-300 inline-block px-8 pb-2">Nama Pemain</h2>
+            
+            <p class="mt-4 font-semibold">Sebagai gelar kehormatan:</p>
+            <h3 class="text-xl font-bold text-amber-600 mb-6">"Penjaga Kerajaan Angka Nusantara"</h3>
+            
+            <div class="grid grid-cols-2 gap-4 text-sm bg-blue-50 p-4 rounded-lg mb-6">
+                <div>
+                    <span class="block text-gray-500">Total Skor:</span>
+                    <span class="font-bold text-lg text-blue-800" id="cert-score">0</span>
+                </div>
+                <div>
+                    <span class="block text-gray-500">Badge Terkumpul:</span>
+                    <span class="font-bold text-lg text-amber-600">4 / 4 🏆</span>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-end mt-8">
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-full border-2 border-amber-500 flex items-center justify-center text-2xl text-amber-500 mx-auto mb-1">✨</div>
+                    <div class="text-xs">Raja Numerik</div>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-full border-2 border-amber-500 flex items-center justify-center text-2xl text-amber-500 mx-auto mb-1">👑</div>
+                    <div class="text-xs">Cap Kerajaan</div>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="navTo('screen-map'); playSound('click')" class="mt-8 glass-btn text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg">
+            Selesai
+        </button>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- JAVASCRIPT LOGIC -->
+    <!-- ============================================== -->
+    <script>
+        // --- 1. STATE MANAGEMENT ---
+        let gameState = {
+            name: '',
+            avatar: 'boy',
+            unlockedLevels: 1,
+            totalScore: 0
+        };
+
+        let currentLevel = 1;
+        let questions = [];
+        let currentQIndex = 0;
+        let scoreInLevel = 0;
+        let lives = 3;
+        let timerInterval;
+        let timeLeft = 20;
+        let combo = 0;
+
+        // --- 2. QUESTION BANK (40 Soal Kualitas Tinggi Kelas 4 SD Merdeka) ---
+        const questionBank = {
+            1: [ // Level 1: Nilai Tempat & Bilangan
+                { q: "Lambang bilangan dari 'Tujuh ribu empat ratus dua belas' adalah...", options: ["7.412", "7.042", "7.421", "7.214"], a: 0 },
+                { q: "Pada bilangan 8.539, angka 5 menempati nilai tempat...", options: ["Ribuan", "Ratusan", "Puluhan", "Satuan"], a: 1 },
+                { q: "Nilai angka 7 pada bilangan 4.750 adalah...", options: ["7", "70", "700", "7.000"], a: 2 },
+                { q: "Mana bilangan yang paling besar?", options: ["6.432", "6.342", "6.423", "6.243"], a: 0 },
+                { q: "Urutkan dari terkecil: 1.200, 1.050, 1.300", options: ["1.050, 1.200, 1.300", "1.200, 1.050, 1.300", "1.300, 1.200, 1.050", "1.050, 1.300, 1.200"], a: 0 },
+                { q: "Hasil pembulatan 345 ke puluhan terdekat adalah...", options: ["340", "350", "300", "400"], a: 1 },
+                { q: "Bilangan ganjil antara 10 dan 15 adalah...", options: ["11, 13", "12, 14", "11, 12, 13", "11, 15"], a: 0 },
+                { q: "4 ribuan + 2 ratusan + 5 satuan = ...", options: ["4.205", "4.250", "4.025", "4.520"], a: 0 },
+                { q: "Selisih nilai angka 8 pada 8.480 adalah...", options: ["7.920", "8.080", "8.000", "80"], a: 0 }, // 8000 - 80 = 7920
+                { q: "Tanda yang tepat: 5.670 ... 5.760", options: ["< (Kurang dari)", "> (Lebih dari)", "= (Sama dengan)", "+ (Ditambah)"], a: 0 }
+            ],
+            2: [ // Level 2: Operasi Hitung (+, -, x, /)
+                { q: "Kastil diserang 150 monster angka, 45 berhasil dikalahkan. Berapa sisa monster?", options: ["115", "105", "195", "95"], a: 1 },
+                { q: "Hasil dari 234 + 156 adalah...", options: ["380", "390", "400", "410"], a: 1 },
+                { q: "Sebuah desa memanen 500 buah, dijual 275 buah. Sisa buah adalah...", options: ["215", "225", "235", "325"], a: 1 },
+                { q: "Hasil dari 12 x 5 adalah...", options: ["50", "60", "70", "80"], a: 1 },
+                { q: "Ada 4 kotak kristal, tiap kotak berisi 15 kristal. Total kristal?", options: ["50", "60", "70", "45"], a: 1 },
+                { q: "64 dibagi 8 sama dengan...", options: ["6", "7", "8", "9"], a: 2 },
+                { q: "Raja membagikan 90 koin emas kepada 9 ksatria sama banyak. Tiap ksatria mendapat...", options: ["9 koin", "10 koin", "11 koin", "12 koin"], a: 1 },
+                { q: "Berapakah 150 + 50 - 20?", options: ["180", "200", "170", "190"], a: 0 },
+                { q: "Operasi perkalian yang hasilnya 36 adalah...", options: ["5 x 7", "6 x 6", "8 x 4", "9 x 3"], a: 1 },
+                { q: "Ibu membeli 3 kg telur, tiap 1 kg berisi 16 butir. Jumlah seluruh telur?", options: ["46", "48", "38", "58"], a: 1 }
+            ],
+            3: [ // Level 3: Pecahan Ceria
+                { q: "Pizza dipotong 4 sama besar. Kamu memakan 1 potong. Pecahannya adalah...", options: ["1/4", "2/4", "3/4", "4/1"], a: 0 },
+                { q: "Pecahan yang senilai dengan 1/2 adalah...", options: ["1/4", "2/4", "3/4", "2/3"], a: 1 },
+                { q: "Manakah pecahan yang paling besar?", options: ["1/5", "1/2", "1/4", "1/3"], a: 1 },
+                { q: "Bentuk pecahan dari 'Dua per lima' ditulis...", options: ["2/5", "5/2", "1/5", "2/2"], a: 0 },
+                { q: "Dalam pecahan 3/8, angka 3 disebut...", options: ["Penyebut", "Pembilang", "Pembagi", "Hasil"], a: 1 },
+                { q: "Tanda yang tepat: 1/4 ... 3/4", options: ["<", ">", "=", "+"], a: 0 },
+                { q: "Ibu membagi roti menjadi 8. Adik makan 3 potong. Sisa roti dalam pecahan?", options: ["5/8", "3/8", "2/8", "6/8"], a: 0 },
+                { q: "1/2 + 1/2 = ...", options: ["1/4", "2/2 (atau 1)", "2/4", "1/2"], a: 1 },
+                { q: "Pecahan senilai dari 2/3 adalah...", options: ["4/6", "3/4", "2/6", "4/5"], a: 0 },
+                { q: "Sebuah kue dibagi 6. Jika dimakan separuhnya (setengah), berapa potong yang dimakan?", options: ["2 potong", "3 potong", "4 potong", "1 potong"], a: 1 }
+            ],
+            4: [ // Level 4: Pola & Bilangan Besar
+                { q: "Lanjutkan pola portal ini: 5, 10, 15, 20, ...", options: ["21", "25", "30", "22"], a: 1 },
+                { q: "Pola bilangan: 100, 90, 80, 70, ... Angka selanjutnya?", options: ["65", "50", "60", "75"], a: 2 },
+                { q: "Temukan bilangan yang hilang: 2, 4, 8, ..., 32", options: ["10", "12", "16", "24"], a: 2 }, // x2
+                { q: "Satu juta ditulis dengan angka...", options: ["1.000", "100.000", "1.000.000", "10.000.000"], a: 2 },
+                { q: "Nilai dari 10 lembar uang sepuluh ribuan adalah...", options: ["10.000", "100.000", "1.000.000", "50.000"], a: 1 },
+                { q: "Pola bentuk: Segitiga, Kotak, Lingkaran, Segitiga, Kotak... Selanjutnya?", options: ["Segitiga", "Kotak", "Lingkaran", "Bintang"], a: 2 },
+                { q: "Jika harga 1 buku Rp3.500, harga 2 buku adalah...", options: ["Rp6.000", "Rp7.000", "Rp7.500", "Rp8.000"], a: 1 },
+                { q: "Angka berapa yang ditambahkan 500 hasilnya 1.200?", options: ["600", "700", "800", "900"], a: 1 },
+                { q: "1, 3, 6, 10, ... (Pola bilangan segitiga)", options: ["12", "14", "15", "16"], a: 2 }, // +2, +3, +4, +5
+                { q: "Dalam 1 hari ada 24 jam. Dalam 2 hari ada berapa jam?", options: ["36 jam", "48 jam", "60 jam", "72 jam"], a: 1 }
+            ]
+        };
+
+        const levelNames = {
+            1: "Desa Nilai Tempat",
+            2: "Kastil Operasi Hitung",
+            3: "Pulau Pecahan Ceria",
+            4: "Kota Pola & Bilangan"
+        };
+
+        const numiMessages = {
+            start: ["Ayo kita mulai!", "Fokus dan baca baik-baik ya!", "Waktumu 20 detik per soal!"],
+            correct: ["Hebat sekali!", "Benar! Lanjutkan!", "Wah, kamu cerdas!", "Kristal bersinar terang!"],
+            wrong: ["Oops, kurang tepat.", "Ayo coba lagi!", "Jangan menyerah!", "Hitung pelan-pelan ya."],
+            hurry: ["Waktu hampir habis!", "Cepat, waktunya menipis!", "Ayo ksatria, buruan!"]
+        };
+
+        // --- 3. AUDIO SYSTEM (Web Audio API) ---
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if(audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            const now = audioCtx.currentTime;
+            
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'correct') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, now); // A4
+                osc.frequency.setValueAtTime(554.37, now + 0.1); // C#5
+                osc.frequency.setValueAtTime(659.25, now + 0.2); // E5
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'win') {
+                osc.type = 'square';
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                    osc.frequency.setValueAtTime(freq, now + (i * 0.15));
+                });
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.8);
+                osc.start(now);
+                osc.stop(now + 0.8);
+            } else if (type === 'lose') {
+                 osc.type = 'sawtooth';
+                 osc.frequency.setValueAtTime(200, now);
+                 osc.frequency.linearRampToValueAtTime(50, now + 0.5);
+                 gainNode.gain.setValueAtTime(0.3, now);
+                 gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
+                 osc.start(now);
+                 osc.stop(now + 0.5);
+            }
+        }
+
+        // --- 4. CORE FUNCTIONS ---
+        function navTo(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function saveProfile() {
+            playSound('click');
+            const nameInput = document.getElementById('playerName').value.trim();
+            const avatarInput = document.querySelector('input[name="avatar"]:checked').value;
+            
+            if(!nameInput) {
+                alert("Isi namamu dulu ya, Ksatria!");
+                return;
+            }
+
+            gameState.name = nameInput;
+            gameState.avatar = avatarInput === 'boy' ? '👦' : '👧';
+            
+            updateMapUI();
+            navTo('screen-map');
+        }
+
+        function updateMapUI() {
+            document.getElementById('map-name').innerText = gameState.name;
+            document.getElementById('map-avatar').innerText = gameState.avatar;
+            document.getElementById('map-score').innerText = gameState.totalScore;
+
+            // Update level buttons
+            for(let i=1; i<=4; i++) {
+                const btn = document.getElementById(`btn-lvl-${i}`);
+                if (i <= gameState.unlockedLevels) {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'grayscale');
+                    // Style unlocked
+                    btn.classList.add('transform', 'hover:scale-105', 'active:scale-95');
+                    let iconDiv = btn.querySelector('div');
+                    iconDiv.innerHTML = '<i class="fa-solid fa-play"></i>';
+                    
+                    // Specific color overrides based on level if unlocked
+                    if(i===2) { iconDiv.className = 'w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-[0_0_15px_rgba(239,68,68,0.8)] bg-red-600 border-4 border-red-400'; btn.classList.add('border-red-400');}
+                    if(i===3) { iconDiv.className = 'w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-[0_0_15px_rgba(236,72,153,0.8)] bg-pink-600 border-4 border-pink-400'; btn.classList.add('border-pink-400');}
+                    if(i===4) { iconDiv.className = 'w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-[0_0_15px_rgba(99,102,241,0.8)] bg-indigo-600 border-4 border-indigo-400'; btn.classList.add('border-indigo-400');}
+                }
+            }
+        }
+
+        function setNumiMessage(type) {
+            const arr = numiMessages[type];
+            const msg = arr[Math.floor(Math.random() * arr.length)];
+            document.getElementById('numi-message').innerText = msg;
+        }
+
+        // --- 5. GAMEPLAY LOGIC ---
+        function prepareLevel(levelId) {
+            playSound('click');
+            currentLevel = levelId;
+            
+            // Randomize 10 questions for this level
+            let allQ = [...questionBank[levelId]];
+            questions = allQ.sort(() => 0.5 - Math.random()).slice(0, 10);
+            
+            currentQIndex = 0;
+            scoreInLevel = 0;
+            lives = 3;
+            combo = 0;
+            
+            document.getElementById('game-level-name').innerText = levelNames[levelId];
+            updateGameUI();
+            setNumiMessage('start');
+            navTo('screen-game');
+            loadQuestion();
+        }
+
+        function updateGameUI() {
+            document.getElementById('game-q-num').innerText = currentQIndex + 1;
+            document.getElementById('game-score').innerText = scoreInLevel;
+            
+            let livesHtml = '';
+            for(let i=0; i<3; i++) {
+                if(i < lives) {
+                    livesHtml += '<i class="fa-solid fa-heart"></i> ';
+                } else {
+                    livesHtml += '<i class="fa-regular fa-heart text-gray-500"></i> ';
+                }
+            }
+            document.getElementById('game-lives').innerHTML = livesHtml;
+        }
+
+        function loadQuestion() {
+            if (currentQIndex >= questions.length) {
+                endLevel(true);
+                return;
+            }
+            
+            if(lives <= 0) {
+                endLevel(false);
+                return;
+            }
+
+            const qData = questions[currentQIndex];
+            document.getElementById('question-text').innerText = qData.q;
+            
+            const optsContainer = document.getElementById('options-container');
+            optsContainer.innerHTML = '';
+            
+            qData.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'glass-btn w-full py-4 px-6 rounded-2xl text-lg font-bold shadow-md';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(index, btn);
+                optsContainer.appendChild(btn);
+            });
+
+            updateGameUI();
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 20;
+            const timerBar = document.getElementById('timer-bar');
+            timerBar.style.width = '100%';
+            timerBar.className = 'h-full bg-gradient-to-r from-green-400 to-fantasy-cyan w-full timer-bar';
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                const percentage = (timeLeft / 20) * 100;
+                timerBar.style.width = percentage + '%';
+
+                if(timeLeft <= 5) {
+                    timerBar.classList.replace('from-green-400', 'from-red-500');
+                    timerBar.classList.replace('to-fantasy-cyan', 'to-orange-500');
+                    if(timeLeft === 5) setNumiMessage('hurry');
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    handleWrongAnswer(null); // Time out
+                }
+            }, 1000);
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            clearInterval(timerInterval);
+            // Disable all buttons
+            const btns = document.getElementById('options-container').querySelectorAll('button');
+            btns.forEach(b => b.disabled = true);
+
+            const correctIndex = questions[currentQIndex].a;
+
+            if (selectedIndex === correctIndex) {
+                // Correct
+                playSound('correct');
+                btnElement.classList.add('glass-btn-correct');
+                combo++;
+                let points = 10 + (combo * 2); // Combo multiplier
+                scoreInLevel += points;
+                setNumiMessage('correct');
+                showFloatingText(`+${points}`, btnElement);
+            } else {
+                // Wrong
+                playSound('wrong');
+                if(btnElement) btnElement.classList.add('glass-btn-wrong');
+                // Highlight correct
+                btns[correctIndex].classList.add('glass-btn-correct');
+                handleWrongAnswer(btnElement);
+                return; // Delay is handled in handleWrongAnswer
+            }
+
+            setTimeout(() => {
+                currentQIndex++;
+                loadQuestion();
+            }, 1000);
+        }
+
+        function handleWrongAnswer(btnElement) {
+            lives--;
+            combo = 0;
+            setNumiMessage('wrong');
+            
+            // Screen Shake
+            const gameContainer = document.getElementById('screen-game');
+            gameContainer.classList.add('animate-shake');
+            
+            setTimeout(() => {
+                gameContainer.classList.remove('animate-shake');
+                currentQIndex++;
+                loadQuestion();
+            }, 1500);
+        }
+
+        function showFloatingText(text, parentBtn) {
+            const el = document.createElement('div');
+            el.innerText = text;
+            el.className = 'absolute text-fantasy-gold font-bold text-2xl animate-float drop-shadow-lg';
+            el.style.left = '50%';
+            el.style.top = '-20px';
+            el.style.transform = 'translateX(-50%)';
+            parentBtn.style.position = 'relative';
+            parentBtn.appendChild(el);
+        }
+
+        // --- 6. ENDING & PROGRESSION ---
+        function endLevel(isWin) {
+            clearInterval(timerInterval);
+            navTo('screen-result');
+            
+            const title = document.getElementById('result-title');
+            const icon = document.getElementById('result-icon');
+            const msg = document.getElementById('result-msg');
+            const scoreEl = document.getElementById('result-score');
+
+            if (isWin) {
+                playSound('win');
+                fireConfetti();
+                title.innerText = "Level Diselesaikan!";
+                icon.innerHTML = '🌟<br><span class="text-xl">Kristal Terselamatkan</span>';
+                msg.innerText = "Kerja bagus Ksatria! Numi sangat bangga padamu.";
+                
+                // Progression logic
+                gameState.totalScore += scoreInLevel;
+                if(currentLevel === gameState.unlockedLevels && currentLevel < 4) {
+                    gameState.unlockedLevels++;
+                }
+
+                if(currentLevel === 4) {
+                    // Game Beaten
+                    setTimeout(() => {
+                        showCertificate();
+                    }, 3000); // Tunggu sebentar lihat skor, lalu ke sertifikat
+                    msg.innerText = "Luar Biasa! Kamu telah menyelesaikan semua tantangan!";
+                }
+
+            } else {
+                playSound('lose');
+                title.innerText = "Sayang Sekali!";
+                icon.innerHTML = '💔';
+                msg.innerText = "Tenagamu habis. Jangan menyerah, ayo coba lagi!";
+                scoreInLevel = 0; // Reset score if failed
+            }
+
+            scoreEl.innerText = isWin ? `+${scoreInLevel}` : "0";
+            updateMapUI();
+        }
+
+        function fireConfetti() {
+            var duration = 3 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+            function randomInRange(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            var interval = setInterval(function() {
+                var timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                var particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+            }, 250);
+        }
+
+        function showCertificate() {
+            playSound('win');
+            fireConfetti();
+            document.getElementById('cert-name').innerText = gameState.name;
+            document.getElementById('cert-score').innerText = gameState.totalScore;
+            navTo('screen-certificate');
+        }
+
+        function resetData() {
+            if(confirm("Yakin ingin menghapus semua progres?")) {
+                gameState = { name: '', avatar: 'boy', unlockedLevels: 1, totalScore: 0 };
+                navTo('screen-splash');
+            }
+        }
+
+        // --- 7. BACKGROUND PARTICLES INITIALIZATION ---
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const numParticles = 20;
+            for(let i=0; i<numParticles; i++) {
+                let p = document.createElement('div');
+                p.className = 'particle-num text-2xl md:text-4xl';
+                p.innerText = Math.floor(Math.random() * 10);
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                p.style.animationDelay = (Math.random() * 5) + 's';
+                p.style.fontSize = (Math.random() * 2 + 1) + 'rem';
+                container.appendChild(p);
+            }
+        }
+
+        // Init
+        window.onload = () => {
+            createParticles();
+        };
+
+    </script>
+</body>
+</html>
